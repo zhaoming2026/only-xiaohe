@@ -185,6 +185,57 @@
       line-height: 1;
     }
 
+    .sound-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(255, 235, 229, .92), rgba(255, 246, 241, .72) 42%, rgba(255, 235, 238, .88)),
+        rgba(255, 250, 247, .82);
+      backdrop-filter: blur(18px);
+      transition: opacity .5s ease, visibility .5s ease;
+    }
+
+    .sound-gate.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .sound-gate-panel {
+      width: min(420px, 100%);
+      text-align: center;
+      padding: 34px 28px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, .58);
+      border: 1px solid rgba(169, 47, 76, .16);
+      box-shadow: var(--shadow);
+    }
+
+    .sound-gate-title {
+      margin: 0 0 12px;
+      color: var(--night);
+      font-family: "Kaiti SC", "STKaiti", serif;
+      font-size: clamp(32px, 9vw, 52px);
+      font-weight: 500;
+      line-height: 1.08;
+    }
+
+    .sound-gate-text {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .sound-gate-button {
+      width: 100%;
+      justify-content: center;
+    }
+
     .keepsake {
       position: relative;
       min-height: 560px;
@@ -662,6 +713,17 @@
 <body>
   <audio id="bgMusic" src="xiaohe-bgm.mp3" preload="auto" autoplay loop playsinline></audio>
 
+  <div class="sound-gate" id="soundGate" role="dialog" aria-labelledby="soundGateTitle" aria-modal="true">
+    <div class="sound-gate-panel">
+      <h2 class="sound-gate-title" id="soundGateTitle">520 快乐，小何</h2>
+      <p class="sound-gate-text">轻轻点一下，打开音乐，也打开这封写给你的信。</p>
+      <button class="button sound-gate-button" type="button" id="soundGateButton">
+        <span class="music-note" aria-hidden="true">♪</span>
+        开启音乐与故事
+      </button>
+    </div>
+  </div>
+
   <div class="floating" aria-hidden="true">
     <i class="petal"></i>
     <i class="petal"></i>
@@ -775,6 +837,8 @@
   <script>
     const music = document.querySelector("#bgMusic");
     const musicToggle = document.querySelector("#musicToggle");
+    const soundGate = document.querySelector("#soundGate");
+    const soundGateButton = document.querySelector("#soundGateButton");
 
     music.volume = 0.56;
 
@@ -788,10 +852,16 @@
       musicToggle.innerHTML = '<span class="music-note" aria-hidden="true">♪</span> 播放背景音乐';
     };
 
+    const hideSoundGate = () => {
+      soundGate.classList.add("is-hidden");
+      soundGate.setAttribute("aria-hidden", "true");
+    };
+
     const tryPlayMusic = async () => {
       try {
         await music.play();
         setPlayingState();
+        hideSoundGate();
         return true;
       } catch (error) {
         setPausedState();
@@ -800,7 +870,7 @@
     };
 
     const unlockMusic = async (event) => {
-      if (event.target.closest("#musicToggle")) return;
+      if (event.target.closest("#musicToggle") || event.target.closest("#soundGateButton")) return;
 
       const didPlay = await tryPlayMusic();
       if (didPlay) {
@@ -814,6 +884,8 @@
     window.addEventListener("pointerdown", unlockMusic, { passive: true });
     window.addEventListener("touchstart", unlockMusic, { passive: true });
     window.addEventListener("keydown", unlockMusic);
+
+    soundGateButton.addEventListener("click", tryPlayMusic);
 
     musicToggle.addEventListener("click", async () => {
       window.removeEventListener("pointerdown", unlockMusic);
